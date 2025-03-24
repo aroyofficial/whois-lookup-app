@@ -6,65 +6,67 @@
     using WhoisLookupAPI.Models.Response;
     using WhoisLookupAPI.Enumerations;
     using System;
+    using System.Net;
+    using System.Net.Http;
+    using System.Threading.Tasks;
 
+    /// <summary>
+    /// Global exception filter to handle and format API errors consistently.
+    /// </summary>
     public class WhoisApiExceptionFilterAttribute : ExceptionFilterAttribute
     {
+        /// <summary>
+        /// Handles exceptions and formats the response accordingly.
+        /// </summary>
+        /// <param name="context">The exception context.</param>
         public override void OnException(ExceptionContext context)
         {
             WhoisErrorResponse errorResponse = new WhoisErrorResponse();
+            HttpStatusCode statusCode;
 
-            // Handle specific exceptions
-            if (context.Exception is ArgumentException argEx)
+            switch (context.Exception)
             {
-                errorResponse.ErrorCode = ErrorCode.InvalidRequest;
-                errorResponse.ErrorMessage = argEx.Message;
-                context.Result = new BadRequestObjectResult(errorResponse);
-            }
-            else if (context.Exception is InvalidRequestDataException invalidReqEx)
-            {
-                errorResponse.ErrorCode = ErrorCode.InvalidRequest;
-                errorResponse.ErrorMessage = invalidReqEx.Message;
-                context.Result = new BadRequestObjectResult(errorResponse);
-            }
-            else if (context.Exception is WhoisApiException whoisApiEx)
-            {
-                errorResponse.ErrorCode = ErrorCode.ExternalApiError;
-                errorResponse.ErrorMessage = whoisApiEx.Message;
-                context.Result = new ObjectResult(errorResponse)
-                {
-                    StatusCode = (int)whoisApiEx.StatusCode
-                };
-            }
-            else if (context.Exception is UnauthorizedAccessException unauthorizedEx)
-            {
-                errorResponse.ErrorCode = ErrorCode.UnauthorizedAccess;
-                errorResponse.ErrorMessage = unauthorizedEx.Message;
-                context.Result = new ObjectResult(errorResponse)
-                {
-                    StatusCode = 401 // Unauthorized
-                };
-            }
-            else if (context.Exception is InvalidOperationException invalidOpEx)
-            {
-                errorResponse.ErrorCode = ErrorCode.InternalServerError;
-                errorResponse.ErrorMessage = invalidOpEx.Message;
-                context.Result = new ObjectResult(errorResponse)
-                {
-                    StatusCode = 500 // Internal Server Error
-                };
-            }
-            else
-            {
-                // Handle any unexpected errors
-                errorResponse.ErrorCode = ErrorCode.Unknown;
-                errorResponse.ErrorMessage = "An unknown error occurred.";
-                context.Result = new ObjectResult(errorResponse)
-                {
-                    StatusCode = 500 // Internal Server Error
-                };
+                case ArgumentException argEx:
+                    errorResponse.ErrorCode = ErrorCode.InvalidRequest;
+                    errorResponse.ErrorMessage = argEx.Message;
+                    statusCode = HttpStatusCode.BadRequest;
+                    break;
+
+                case InvalidRequestDataException invalidReqEx:
+                    errorResponse.ErrorCode = ErrorCode.InvalidRequest;
+                    errorResponse.ErrorMessage = invalidReqEx.Message;
+                    statusCode = HttpStatusCode.BadRequest;
+                    break;
+
+                case WhoisApiException whoisApiEx:
+                    errorResponse.ErrorCode = ErrorCode.ApiError;
+                    errorResponse.ErrorMessage = whoisApiEx.Message;
+                    statusCode = whoisApiEx.StatusCode;
+                    break;
+
+                case HttpRequestException httpEx:
+                    errorResponse.ErrorCode = ErrorCode.NetworkError;
+                    errorResponse.ErrorMessage = "An error occurred while communicating with an external service.";
+                    statusCode = HttpStatusCode.ServiceUnavailable;
+                    break;
+
+                case TaskCanceledException taskEx:
+                    errorResponse.ErrorCode = ErrorCode.Timeout;
+                    errorResponse.ErrorMessage = "The request timed out.";
+                    statusCode = HttpStatusCode.RequestTimeout;
+                    break;
+
+                default:
+                    errorResponse.ErrorCode = ErrorCode.UnknownError;
+                    errorResponse.ErrorMessage = "An unexpected error occurred. Please try again later.";
+                    statusCode = HttpStatusCode.InternalServerError;
+                    break;
             }
 
-            context.ExceptionHandled = true;
+            context.Result = new ObjectResult(errorResponse)
+            {
+                StatusCode = (int)statusCode
+            };
         }
     }
 }
