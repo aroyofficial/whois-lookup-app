@@ -11,33 +11,28 @@
     /// <summary>
     /// Client for interacting with the Better Stack Logtail API.
     /// </summary>
-    public class BetterStackApiClient : IBetterStackApiClient
+    public class BetterStackAPIClient : IBetterStackAPIClient
     {
         private readonly HttpClient _httpClient;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="BetterStackApiClient"/> class.
+        /// Initializes a new instance of the <see cref="BetterStackAPIClient"/> class.
         /// </summary>
         /// <param name="httpClient">The HTTP client used for sending logs.</param>
         /// <exception cref="ArgumentNullException">Thrown if <paramref name="httpClient"/> is null.</exception>
-        public BetterStackApiClient(HttpClient httpClient)
+        public BetterStackAPIClient(HttpClient httpClient)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
-        /// <summary>
-        /// Sends a log entry to Better Stack Logtail.
-        /// </summary>
-        /// <param name="level">The log level (info, warning, error).</param>
-        /// <param name="message">The log message content.</param>
-        /// <returns>A task representing the asynchronous logging operation.</returns>
+        /// <inheritdoc/>
         /// <exception cref="BetterStackLoggingException">Thrown when logging to Better Stack fails.</exception>
         public async Task SendLogAsync(string level, string message)
         {
             try
             {
                 // Prepare log entry in JSON format
-                var logEntry = new
+                object logEntry = new
                 {
                     level,
                     message,
@@ -45,7 +40,7 @@
                 };
 
                 string json = JsonSerializer.Serialize(logEntry);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                StringContent content = new StringContent(json, Encoding.UTF8, "application/json");
 
                 // Send log entry to Better Stack
                 HttpResponseMessage response = await _httpClient.PostAsync(string.Empty, content);

@@ -13,7 +13,7 @@
     /// <summary>
     /// Global exception filter to handle and format API errors consistently.
     /// </summary>
-    public class WhoisApiExceptionFilterAttribute : ExceptionFilterAttribute
+    public class WhoisAPIExceptionFilterAttribute : ExceptionFilterAttribute
     {
         /// <summary>
         /// Handles exceptions and formats the response accordingly.
@@ -38,7 +38,7 @@
                     statusCode = HttpStatusCode.BadRequest;
                     break;
 
-                case WhoisApiException whoisApiEx:
+                case WhoisAPIException whoisApiEx:
                     errorResponse.ErrorCode = ErrorCode.ApiError;
                     errorResponse.ErrorMessage = whoisApiEx.Message;
                     statusCode = whoisApiEx.StatusCode;

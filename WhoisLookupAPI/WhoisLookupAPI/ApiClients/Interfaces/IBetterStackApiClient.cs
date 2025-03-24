@@ -5,7 +5,7 @@
     /// <summary>
     /// Interface for the Better Stack API Client.
     /// </summary>
-    public interface IBetterStackApiClient
+    public interface IBetterStackAPIClient
     {
         /// <summary>
         /// Sends a log entry to Better Stack Logtail.

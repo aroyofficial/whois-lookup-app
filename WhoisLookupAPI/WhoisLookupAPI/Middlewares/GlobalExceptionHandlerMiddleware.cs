@@ -54,14 +54,14 @@
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-            var errorResponse = new WhoisErrorResponse()
+            object errorResponse = new WhoisErrorResponse()
             {
                 ErrorCode = Enumerations.ErrorCode.InternalServerError,
                 ErrorMessage = "An unexpected error occurred. Please try again later.",
                 ErrorDetails = exception.Message // Can be omitted in production for security reasons
             };
 
-            var jsonResponse = JsonSerializer.Serialize(errorResponse);
+            string jsonResponse = JsonSerializer.Serialize(errorResponse);
             return context.Response.WriteAsync(jsonResponse);
         }
     }

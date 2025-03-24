@@ -6,7 +6,7 @@
     /// <summary>
     /// Defines the contract for a Whois API client to retrieve domain information.
     /// </summary>
-    public interface IWhoisApiClient
+    public interface IWhoisAPIClient
     {
         /// <summary>
         /// Retrieves Whois information for the specified domain.
@@ -14,7 +14,7 @@
         /// <param name="domainName">The domain name to fetch Whois information for.</param>
         /// <returns>A task representing the asynchronous operation, containing a JSON string with the Whois information.</returns>
         /// <exception cref="System.ArgumentException">Thrown if <paramref name="domainName"/> is null or empty.</exception>
-        /// <exception cref="WhoisApiException">
+        /// <exception cref="WhoisAPIException">
         /// Thrown if the API request fails due to network issues, rate limits, or other errors.
         /// </exception>
         Task<string> GetWhoisInfo(string domainName);

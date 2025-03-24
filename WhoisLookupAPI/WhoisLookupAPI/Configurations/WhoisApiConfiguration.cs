@@ -3,7 +3,7 @@
     /// <summary>
     /// Represents the configuration settings for the Whois API.
     /// </summary>
-    public class WhoisApiConfiguration
+    public class WhoisAPIConfiguration
     {
         /// <summary>
         /// Gets or sets the base URL of the Whois API.

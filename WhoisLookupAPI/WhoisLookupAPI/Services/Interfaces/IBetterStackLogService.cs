@@ -1,6 +1,5 @@
 ﻿namespace WhoisLookupAPI.Services.Interfaces
 {
-    using System;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -25,9 +24,8 @@
         /// <summary>
         /// Logs an error message to Better Stack.
         /// </summary>
-        /// <param name="message">The error message to be recorded.</param>
-        /// <param name="exception">Optional exception details associated with the error.</param>
+        /// <param name="obj">The error object containing detailed error info.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        Task LogErrorAsync(string message, Exception? exception = null);
+        Task LogErrorAsync(object obj);
     }
 }

@@ -32,14 +32,14 @@
 
             try
             {
-                foreach (var prop in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
+                foreach (PropertyInfo prop in typeof(T).GetProperties(BindingFlags.Public | BindingFlags.Instance))
                 {
                     if (!prop.CanWrite) continue; // Skip read-only properties
 
-                    var value = prop.GetValue(configuration)?.ToString();
+                    string value = prop.GetValue(configuration)?.ToString();
                     if (!string.IsNullOrEmpty(value) && DoesEnvVariableExist(value))
                     {
-                        var envValue = Environment.GetEnvironmentVariable(value);
+                        string envValue = Environment.GetEnvironmentVariable(value);
                         if (envValue != null)
                         {
                             try
