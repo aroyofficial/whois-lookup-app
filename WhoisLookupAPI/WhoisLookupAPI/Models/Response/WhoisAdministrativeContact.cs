@@ -1,6 +1,6 @@
 ﻿namespace WhoisLookupAPI.Models.Response
 {
-    using System.Xml.Serialization;
+    using Newtonsoft.Json;
 
     /// <summary>
     /// Represents the administrative contact information retrieved from the Whois API.
@@ -10,7 +10,7 @@
         /// <summary>
         /// Gets or sets the name of the administrative contact organization.
         /// </summary>
-        [XmlElement("organization")]
+        [JsonProperty("organization")]
         public string Name { get; set; }
     }
 }

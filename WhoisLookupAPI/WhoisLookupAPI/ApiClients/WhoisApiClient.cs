@@ -44,8 +44,10 @@
                 throw argEx;
             }
 
-            await _logger.LogInfoAsync($"Fetching data from Whois API for {domainName}");
-            Dictionary<string, string> queryParameters = new Dictionary<string, string?> { { "domainName", domainName } };
+            Dictionary<string, string?> queryParameters = new Dictionary<string, string?> {
+                { "domainName", domainName },
+                { "outputFormat", "JSON" }
+            };
             string endpoint = QueryHelpers.AddQueryString(string.Empty, queryParameters);
 
             int retryCount = 0;
@@ -53,16 +55,10 @@
             {
                 try
                 {
-                    if (retryCount > 0)
-                    {
-                        await _logger.LogInfoAsync($"Retry {retryCount} - {retryCount}");
-                    }
-
                     HttpResponseMessage response = await _httpClient.GetAsync(endpoint);
 
                     if (response.IsSuccessStatusCode)
                     {
-                        await _logger.LogInfoAsync($"Successfully fetched data from Whois API for {domainName}");
                         return await response.Content.ReadAsStringAsync();
                     }
 

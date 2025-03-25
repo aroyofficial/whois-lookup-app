@@ -1,8 +1,9 @@
 ﻿namespace WhoisLookupAPI.Services
 {
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using StackExchange.Redis;
     using System;
-    using System.Text.Json;
     using System.Threading.Tasks;
     using WhoisLookupAPI.Services.Interfaces;
 
@@ -30,25 +31,26 @@
         {
             if (string.IsNullOrWhiteSpace(key))
             {
-                throw new ArgumentException("Cache key cannot be null or empty.", nameof(key));
+                Exception ex = new ArgumentException("Cache key cannot be null or empty.", nameof(key));
+                await _logger.LogErrorAsync(new { Exception = ex, CacheKey = key, Value = value });
+                return;
             }
 
             if (value is null)
             {
-                throw new ArgumentNullException(nameof(value), "Value cannot be null.");
+                Exception ex = new ArgumentNullException(nameof(value), "Value cannot be null.");
+                await _logger.LogErrorAsync(new { Exception = ex, CacheKey = key, Value = value });
+                return;
             }
 
             try
             {
-                await _logger.LogInfoAsync($"Storing key {key} into cache");
-                string serializedValue = JsonSerializer.Serialize(value);
+                string serializedValue = JsonConvert.SerializeObject(value);
                 await _database.StringSetAsync(key, serializedValue, expiry);
-                await _logger.LogInfoAsync($"Key {key} stored successfully into cache");
             }
             catch (Exception ex)
             {
-                await _logger.LogErrorAsync(new { Exception = ex, CacheKey = key });
-                throw new InvalidOperationException($"Failed to cache data for key: {key}", ex);
+                await _logger.LogErrorAsync(new { Exception = ex, CacheKey = key, Value = value });
             }
         }
 
@@ -57,47 +59,25 @@
         {
             if (string.IsNullOrWhiteSpace(key))
             {
-                throw new ArgumentException("Cache key cannot be null or empty.", nameof(key));
+                Exception ex = new ArgumentException("Cache key cannot be null or empty.", nameof(key));
+                await _logger.LogErrorAsync(new { Exception = ex, CacheKey = key });
+                return default;
             }
 
             try
             {
-                await _logger.LogInfoAsync($"Finding key {key} in cache");
                 RedisValue cachedValue = await _database.StringGetAsync(key);
                 if (!cachedValue.HasValue)
                 {
-                    await _logger.LogInfoAsync($"Key {key} not found in cache");
                     return default!;
                 }
 
-                await _logger.LogInfoAsync($"Key {key} found in cache");
-                return JsonSerializer.Deserialize<T>(cachedValue!)!;
+                return JsonConvert.DeserializeObject<T>(cachedValue!)!;
             }
             catch (Exception ex)
             {
                 await _logger.LogErrorAsync(new { Exception = ex, CacheKey = key });
-                throw new InvalidOperationException($"Failed to retrieve cache data for key: {key}", ex);
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task RemoveAsync(string key)
-        {
-            if (string.IsNullOrWhiteSpace(key))
-            {
-                throw new ArgumentException("Cache key cannot be null or empty.", nameof(key));
-            }
-
-            try
-            {
-                await _logger.LogInfoAsync($"Removing key {key} from cache");
-                await _database.KeyDeleteAsync(key);
-                await _logger.LogInfoAsync($"Key {key} removed successfully from cache");
-            }
-            catch (Exception ex)
-            {
-                await _logger.LogErrorAsync(new { Exception = ex, CacheKey = key });
-                throw new InvalidOperationException($"Failed to remove cache entry for key: {key}", ex);
+                return default;
             }
         }
     }

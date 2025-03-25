@@ -1,16 +1,20 @@
 ﻿namespace WhoisLookupAPI.Services
 {
+    using Newtonsoft.Json;
+    using Newtonsoft.Json.Linq;
     using System;
-    using System.IO;
+    using System.Linq;
+    using System.Reflection;
     using System.Text.RegularExpressions;
     using System.Threading.Tasks;
-    using System.Xml.Serialization;
     using WhoisLookupAPI.ApiClients.Interfaces;
+    using WhoisLookupAPI.Constants;
     using WhoisLookupAPI.Enumerations;
     using WhoisLookupAPI.Exceptions;
     using WhoisLookupAPI.Models.Request;
     using WhoisLookupAPI.Models.Response;
     using WhoisLookupAPI.Services.Interfaces;
+    using WhoisLookupAPI.Utilities;
 
     /// <summary>
     /// Provides services for retrieving and caching Whois information.
@@ -39,7 +43,7 @@
         public async Task<WhoisRecord> GetWhoisInfo(WhoisRequest request)
         {
             await ValidateRequestAsync(request);
-            string cacheKey = $"Whois_{request.DomainName}_{request.Type}";
+            string cacheKey = CacheHelper.GenerateKey(request);
             WhoisRecord cachedResponse = request.Type switch
             {
                 WhoisRequestType.DomainInfo => await _cacheService.GetAsync<WhoisDomainInfo>(cacheKey),
@@ -52,11 +56,18 @@
             }
 
             string response = await _apiClient.GetWhoisInfo(request.DomainName);
-            WhoisRecord? whoisResponse = request.Type switch
+            
+            WhoisRecord whoisResponse = request.Type switch
             {
-                WhoisRequestType.DomainInfo => await DeserializeXmlAsync<WhoisDomainInfo>(response),
-                WhoisRequestType.ContactInfo => await DeserializeXmlAsync<WhoisContactInfo>(response)
+                WhoisRequestType.DomainInfo => WhoisJsonParser.ParseResponse<WhoisDomainInfo>(response),
+                WhoisRequestType.ContactInfo => WhoisJsonParser.ParseResponse<WhoisContactInfo>(response)
             };
+
+            // if the domain is not found then set the requested domain name in the response 
+            if (whoisResponse.GetType() == typeof(WhoisErrorInfo))
+            {
+                ((WhoisErrorInfo)whoisResponse).DomainName = request.DomainName;
+            }
 
             await _cacheService.SetAsync<WhoisRecord>(cacheKey, whoisResponse, TimeSpan.FromMinutes(10));
             return whoisResponse;
@@ -72,7 +83,6 @@
         {
             Exception ex = null;
 
-            await _logger.LogInfoAsync("Validating request object");
             if (request == null)
             {
                 ex = new ArgumentNullException(nameof(request), "Whois request cannot be null.");
@@ -91,52 +101,6 @@
                 await _logger.LogErrorAsync(new { Exception = ex, Request = request });
                 throw ex;
             }
-
-            await _logger.LogInfoAsync("Request object validated successfully");
-        }
-
-        /// <summary>
-        /// Deserializes an XML string into the specified object type.
-        /// </summary>
-        /// <typeparam name="T">The type of object to deserialize.</typeparam>
-        /// <param name="xml">The XML string to deserialize.</param>
-        /// <returns>The deserialized object of type <typeparamref name="T"/>.</returns>
-        /// <exception cref="XmlSerializationException">Thrown if deserialization fails or input is invalid.</exception>
-        private async Task<T> DeserializeXmlAsync<T>(string xml)
-        {
-            Exception exObj = null;
-            T response = default;
-
-            if (string.IsNullOrWhiteSpace(xml))
-            {
-                exObj = new ArgumentNullException(nameof(xml), "XML input cannot be null or empty.");
-            }
-            else
-            {
-                try
-                {
-                    await _logger.LogInfoAsync("Parsing XML response");
-                    XmlSerializer serializer = new XmlSerializer(typeof(T), new XmlRootAttribute("WhoisRecord") { Namespace = "" });
-                    xml = Regex.Replace(xml, @"(\+|-)?\d{2}:\d{2}|\+0000", "Z");
-                    using (StringReader reader = new StringReader(xml))
-                    {
-                        response = (T)serializer.Deserialize(reader);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    exObj = new XmlSerializationException("Failed to deserialize XML into the specified object type.", ex);
-                }
-            }
-
-            if (exObj != null)
-            {
-                await _logger.LogErrorAsync(new { Exception = exObj, XMLData = xml });
-                throw exObj;
-            }
-
-            await _logger.LogInfoAsync("XML response parsed successfully");
-            return response;
         }
     }
 }

@@ -25,12 +25,5 @@
         /// <param name="key">A unique identifier for the cached entry.</param>
         /// <returns>A task that resolves to the cached value if found; otherwise, returns <c>default(T)</c>.</returns>
         Task<T> GetAsync<T>(string key);
-
-        /// <summary>
-        /// Asynchronously removes a cached entry from Redis.
-        /// </summary>
-        /// <param name="key">A unique identifier for the cached entry to be deleted.</param>
-        /// <returns>A task representing the asynchronous cache removal operation.</returns>
-        Task RemoveAsync(string key);
     }
 }

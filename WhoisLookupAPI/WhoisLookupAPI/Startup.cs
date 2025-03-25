@@ -7,7 +7,6 @@
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.Hosting;
     using Microsoft.Extensions.Logging;
-    using Microsoft.Extensions.Options;
     using StackExchange.Redis;
     using System;
     using System.Net.Http.Headers;
@@ -106,33 +105,23 @@
             services.AddSingleton<IBetterStackLogService, BetterStackLogService>();
 
             // Register Redis connection multiplexer
-            services.AddSingleton<IConnectionMultiplexer>(sp =>
+            services.AddSingleton<IConnectionMultiplexer>((serviceProvider) =>
             {
-                RedisConfiguration redisConfig = sp.GetRequiredService<IOptions<RedisConfiguration>>().Value;
-                return ConnectionMultiplexer.Connect(new ConfigurationOptions()
-                {
-                    EndPoints = { redisConfig.Endpoint },
-                    Password = redisConfig.Password,
-                    AbortOnConnectFail = false,
-                    ConnectRetry = 3,
-                    SyncTimeout = 5000,
-                    AsyncTimeout = 5000
-                });
+                return ConnectionMultiplexer.Connect(redisConfiguration.ConnectionString);
             });
 
-            // Register HttpClients
-            services.AddHttpClient<IWhoisAPIClient, WhoisAPIClient>("WhoisApiClient", client =>
+            // Register Whois API client
+            services.AddHttpClient<IWhoisAPIClient, WhoisAPIClient>("WhoisApiClient", (client) =>
             {
-                WhoisAPIConfiguration whoisConfig = Configuration.GetSection("WhoisAPI").Get<WhoisAPIConfiguration>();
-                client.BaseAddress = new Uri(whoisConfig.BaseURL);
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", whoisConfig.APIKey);
+                client.BaseAddress = new Uri(whoisApiConfiguration.BaseURL);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", whoisApiConfiguration.APIKey);
             });
 
-            services.AddHttpClient<IBetterStackAPIClient, BetterStackAPIClient>("BetterStackApiClient", client =>
+            // Register Better Stack API client
+            services.AddHttpClient<IBetterStackAPIClient, BetterStackAPIClient>("BetterStackApiClient", (serviceProvider, client) =>
             {
-                BetterStackConfiguration betterStackConfig = Configuration.GetSection("BetterStack").Get<BetterStackConfiguration>();
-                client.BaseAddress = new Uri(betterStackConfig.IngestionURL);
-                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", betterStackConfig.APIToken);
+                client.BaseAddress = new Uri(betterStackConfiguration.IngestionURL);
+                client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", betterStackConfiguration.APIToken);
             });
         }
 

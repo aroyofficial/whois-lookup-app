@@ -6,13 +6,8 @@
     public class RedisConfiguration
     {
         /// <summary>
-        /// Gets or sets the Redis server endpoint.
+        /// Gets or sets the connection string.
         /// </summary>
-        public string Endpoint { get; set; }
-
-        /// <summary>
-        /// Gets or sets the password for Redis authentication.
-        /// </summary>
-        public string Password { get; set; }
+        public string ConnectionString { get; set; }
     }
 }

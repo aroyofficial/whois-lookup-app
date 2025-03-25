@@ -25,18 +25,6 @@
         }
 
         /// <inheritdoc/>
-        public async Task LogInfoAsync(string message)
-        {
-            await _apiClient.SendLogAsync(BetterStackLogLevel.Info, message);
-        }
-
-        /// <inheritdoc/>
-        public async Task LogWarningAsync(string message)
-        {
-            await _apiClient.SendLogAsync(BetterStackLogLevel.Warning, message);
-        }
-
-        /// <inheritdoc/>
         public async Task LogErrorAsync(object obj)
         {
             string message = JsonConvert.SerializeObject(obj, Formatting.Indented, new JsonSerializerSettings
