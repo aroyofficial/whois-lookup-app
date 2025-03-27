@@ -10,8 +10,6 @@
     /// <summary>
     /// Controller for handling Whois API requests.
     /// </summary>
-    [ApiController]
-    [Route("api/[controller]")]
     public class WhoisController : BaseController
     {
         private readonly IWhoisService _whoisService;
