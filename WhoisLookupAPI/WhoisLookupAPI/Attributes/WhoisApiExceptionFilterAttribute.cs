@@ -39,7 +39,7 @@
                     break;
 
                 case WhoisAPIException whoisApiEx:
-                    errorResponse.ErrorCode = ErrorCode.ApiError;
+                    errorResponse.ErrorCode = ErrorCode.APIError;
                     errorResponse.ErrorMessage = whoisApiEx.Message;
                     statusCode = whoisApiEx.StatusCode;
                     break;

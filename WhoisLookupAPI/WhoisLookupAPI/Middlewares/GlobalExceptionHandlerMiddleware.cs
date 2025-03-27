@@ -58,7 +58,7 @@
             {
                 ErrorCode = Enumerations.ErrorCode.InternalServerError,
                 ErrorMessage = "An unexpected error occurred. Please try again later.",
-                ErrorDetails = exception.Message // Can be omitted in production for security reasons
+                ErrorDetails = exception.Message
             };
 
             string jsonResponse = JsonSerializer.Serialize(errorResponse);

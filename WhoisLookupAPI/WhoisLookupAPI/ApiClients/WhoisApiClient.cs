@@ -44,10 +44,13 @@
                 throw argEx;
             }
 
+            // Construct query parameters for the API request
             Dictionary<string, string?> queryParameters = new Dictionary<string, string?> {
                 { "domainName", domainName },
                 { "outputFormat", "JSON" }
             };
+
+            // Note: Base URL is already set to the HTTP client via DI
             string endpoint = QueryHelpers.AddQueryString(string.Empty, queryParameters);
 
             int retryCount = 0;
@@ -62,12 +65,14 @@
                         return await response.Content.ReadAsStringAsync();
                     }
 
+                    // If the API returns a 429 Too Many Requests error, apply exponential backoff and retry
                     if (response.StatusCode == HttpStatusCode.TooManyRequests)
                     {
                         await Task.Delay(ComputeExponentialBackoff(retryCount));
                     }
                     else
                     {
+                        // Log and throw an exception for other HTTP errors
                         WhoisAPIException ex = new WhoisAPIException($"Whois API request failed with status code {response.StatusCode}", response.StatusCode);
                         await _logger.LogErrorAsync(new { Exception = ex, DomainName = domainName });
                         throw ex;
@@ -75,22 +80,26 @@
                 }
                 catch (HttpRequestException ex)
                 {
+                    // Handles network-related issues (e.g., API is unreachable, connection failure)
                     WhoisAPIException apiEx = new WhoisAPIException("Failed to connect to Whois API.", HttpStatusCode.ServiceUnavailable, ex);
                     await _logger.LogErrorAsync(new { Exception = apiEx, DomainName = domainName });
                     throw apiEx;
                 }
                 catch (TaskCanceledException ex)
                 {
+                    // Handles timeout errors when the API takes too long to respond
                     WhoisAPIException apiEx = new WhoisAPIException("Request timeout. The API call took too long.", HttpStatusCode.RequestTimeout, ex);
                     await _logger.LogErrorAsync(new { Exception = apiEx, DomainName = domainName });
                     throw apiEx;
                 }
                 finally
                 {
+                    // Ensure the retry count is only incremented on failures
                     retryCount++;
                 }
             }
 
+            // Log and throw an exception after exhausting all retries
             WhoisAPIException apiException = new WhoisAPIException("Whois API request failed after multiple retries.", HttpStatusCode.ServiceUnavailable);
             await _logger.LogErrorAsync(new { Exception = apiException, DomainName = domainName });
             throw apiException;
@@ -103,7 +112,8 @@
         /// <returns>The time delay in milliseconds before the next retry attempt.</returns>
         private static int ComputeExponentialBackoff(int retryAttempt)
         {
-            return (int)(Math.Pow(2, retryAttempt) * 1000); // Exponential backoff: 1s, 2s, 4s, etc.
+            // Exponential backoff formula: 2^retryAttempt * 1000 (e.g., 1s, 2s, 4s, etc.)
+            return (int)(Math.Pow(2, retryAttempt) * 1000);
         }
     }
 }

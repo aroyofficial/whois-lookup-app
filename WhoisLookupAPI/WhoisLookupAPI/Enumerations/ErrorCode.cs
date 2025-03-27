@@ -39,7 +39,7 @@
         /// <summary>
         /// An API error occurred while processing the request.
         /// </summary>
-        ApiError = 2002,
+        APIError = 2002,
 
         /// <summary>
         /// A network error occurred while communicating with an external service.
